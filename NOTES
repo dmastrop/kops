@@ -1,0 +1,178 @@
+Kops setup
+Note kops works with GCP and Openstack as well.
+
+
+
+
+
+
+
+davemastropolo@Margarets-MacBook-Air workspace % dig NS kubernetes1.holinessinloveofchrist.com
+Use us-west-1 with kubernetes1 zone
+
+davemastropolo@Margarets-MacBook-Air workspace % aws s3api create-bucket --bucket s3.kubernetes1.holinessinloveofchrist.com --region us-west-1 --create-bucket-configuration LocationConstraint=us-west-1 
+{
+    "Location": "http://s3.kubernetes1.holinessinloveofchrist.com.s3.amazonaws.com/"
+}
+Enable versioning configuration on this s3 us-west1 bucket for kubernetes1
+
+davemastropolo@Margarets-MacBook-Air workspace % aws s3api put-bucket-versioning --bucket s3.kubernetes1.holinessinloveofchrist.com --versioning-configuration Status=Enabled
+davemastropolo@Margarets-MacBook-Air kops % export KOPS_CLUSTER_NAME=kubernetes1.holinessinloveofchrist.com
+davemastropolo@Margarets-MacBook-Air kops % export KOPS_STATE_STORE=s3://s3.kubernetes1.holinessinloveofchrist.com
+
+
+
+Do this in the kops directory so that I know where the key is
+
+davemastropolo@Margarets-MacBook-Air kops % ls
+kops            kops.pub        kops_setup.rtfd
+davemastropolo@Margarets-MacBook-Air kops % pwd
+/Users/davemastropolo/workspace/prod/course3/kops
+
+
+ssh-keygen -t rsa -f kops
+Generating public/private rsa key pair.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in kops.
+Your public key has been saved in kops.pub.
+
+
+
+
+
+
+Try to re-run this with kubernetes1.holinessinloveofchrist.com zone.
+
+
+
+
+For KUDO see below must use version 1.21.7
+kops create cluster --node-count=3 --node-size=t3.large --zones=us-east-1a,us-east-1b,us-east-1c --master-size=t3.large --master-zones=us-east-1a,us-east-1b,us-east-1c --ssh-public-key=kops.pub
+
+Must do this in kops directory as that is where the ssh key is
+davemastropolo@Margarets-MacBook-Air kops % kops create cluster --node-count=3 --node-size=t3.large --zones=us-east-1a,us-east-1b,us-east-1c --master-size=t3.large --master-zones=us-east-1a,us-east-1b,us-east-1c --ssh-public-key=kops.pub
+
+
+
+
+
+Optional   - - kubernetes-version=1.21.7 for KUDO lab
+
+kops create cluster --node-count=3 --node-size=t3.large --zones=us-east-1a,us-east-1b,us-east-1c --master-size=t3.large --master-zones=us-east-1a,us-east-1b,us-east-1c --ssh-public-key=kops.pub --kubernetes-version=1.21.7
+
+
+
+
+
+Cluster configuration has been created.
+
+Suggestions:
+ * list clusters with: kops get cluster
+ * edit this cluster with: kops edit cluster kubernetes1.holinessinloveofchrist.com
+ * edit your node instance group: kops edit ig --name=kubernetes1.holinessinloveofchrist.com nodes-us-east-1a
+ * edit your control-plane instance group: kops edit ig --name=kubernetes1.holinessinloveofchrist.com control-plane-us-east-1a
+
+Finally configure your cluster with: kops update cluster --name kubernetes1.holinessinloveofchrist.com --yes --admin
+
+
+
+
+
+
+
+
+
+First define the KUBECONFIG env variable to point to the file that you want to run kops kubeconfig from
+
+
+/Users/davemastropolo/.kube/kops
+
+
+davemastropolo@Margarets-MacBook-Air kops % export KUBECONFIG=/Users/davemastropolo/.kube/kops/config       <<<< there must be a dummy file in there.
+
+
+
+After the cluster was configured (see below) verified that the .kube config was changed in the directory above.
+
+
+Next need to run the command above to actually configure the cluster on AWS EC2
+
+
+Next run the command to instantiate the cluster on AWS
+kops update cluster --name kubernetes1.holinessinloveofchrist.com --yes --admin
+
+
+
+
+
+ Exporting kubeconfig for cluster
+kOps has set your kubectl context to kubernetes1.holinessinloveofchrist.com
+
+Cluster is starting.  It should be ready in a few minutes.
+
+Suggestions:
+ * validate cluster: kops validate cluster --wait 10m
+ * list nodes: kubectl get nodes --show-labels
+ * ssh to a control-plane node: ssh -i ~/.ssh/id_rsa ubuntu@api.kubernetes1.holinessinloveofchrist.com
+ * the ubuntu user is specific to Ubuntu. If not using Ubuntu please use the appropriate user based on your OS.
+ * read about installing addons at: https://kops.sigs.k8s.io/addons.
+
+davemastropolo@Margarets-MacBook-Air kops % kubectl get nodes
+NAME                  STATUS   ROLES           AGE     VERSION
+i-014f1de08c9d02574   Ready    node            53s     v1.26.5
+i-060050e04e523eb2c   Ready    control-plane   2m27s   v1.26.5
+i-06b4ef442d8e48b08   Ready    control-plane   77s     v1.26.5
+i-0bfd24d4f1e998a06   Ready    control-plane   2m24s   v1.26.5
+i-0d2d1db7100c882e6   Ready    node            48s     v1.26.5
+i-0fc5cd45e0e32b4fb   Ready    node            44s     v1.26.5
+davemastropolo@Margarets-MacBook-Air kops % 
+
+
+
+davemastropolo@Margarets-MacBook-Air kops % kubectl get nodes --show-labels
+
+
+
+
+
+avemastropolo@Margarets-MacBook-Air kops % kubectl get node -o wide
+
+
+
+
+
+Master node ssh
+
+ping api.kubernetes1.holinessinloveofchrist.com
+PING api.kubernetes1.holinessinloveofchrist.com (18.209.227.245): 56 data bytes
+
+
+
+davemastropolo@Margarets-MacBook-Air kops % ssh -i kops ubuntu@api.kubernetes1.holinessinloveofchrist.com
+
+
+
+
+Ssh into worker nodes
+
+davemastropolo@Margarets-MacBook-Air kops % kubectl get node -o wide
+NAME                  STATUS   ROLES           AGE     VERSION   INTERNAL-IP     EXTERNAL-IP      OS-IMAGE             KERNEL-VERSION    CONTAINER-RUNTIME
+i-014f1de08c9d02574   Ready    node            7m46s   v1.26.5   172.20.108.30   54.91.254.123    Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+i-060050e04e523eb2c   Ready    control-plane   9m20s   v1.26.5   172.20.32.82    18.209.227.245   Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+i-06b4ef442d8e48b08   Ready    control-plane   8m10s   v1.26.5   172.20.69.192   18.212.40.121    Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+i-0bfd24d4f1e998a06   Ready    control-plane   9m17s   v1.26.5   172.20.127.38   54.158.242.161   Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+i-0d2d1db7100c882e6   Ready    node            7m41s   v1.26.5   172.20.58.125   3.231.213.135    Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+i-0fc5cd45e0e32b4fb   Ready    node            7m37s   v1.26.5   172.20.68.181   44.203.185.50    Ubuntu 20.04.6 LTS   5.15.0-1035-aws   containerd://1.6.18
+
+
+Ssh into 54.91.254.123
+
+davemastropolo@Margarets-MacBook-Air kops % ssh -i kops ubuntu@54.91.254.123
+
+
+
+
+To delete cluster 
+
+Kops delete cluster - - yes
